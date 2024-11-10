@@ -3,8 +3,16 @@ export interface UserConnections {
     [userId: string]: string;
 }
 
-export type sendToUserProps = {
+export type rideProps = {
     routeID: string;
+    driverID: string;
+    message: {
+        title: string,
+        text: string
+    }
+}
+
+export type chooseRouteProps = {
     driverID: string;
     message: {
         title: string,

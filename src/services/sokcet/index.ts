@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import {sendToUserProps, UserConnections} from "./types";
+import {chooseRouteProps, rideProps, UserConnections} from "./types";
 import {FacdriveAPI} from "../FacdriveAPI";
 
 export class NotificationSocket {
@@ -18,14 +18,15 @@ export class NotificationSocket {
             this.userConnections[userId] = socket.id;
             console.log(`Cliente conectado: ${socket.id} com ID de usuário: ${userId}`);
 
-            this.sendToUser(socket);
+            this.rideManager(socket);
             this.onDisconnect(socket);
+            this.chooseRoute(socket);
         });
     }
 
-    private sendToUser(socket: Socket) {
-        socket.on("sendToUser", async (data: string) => {
-            const dataParsed: sendToUserProps = JSON.parse(data);
+    private rideManager(socket: Socket) {
+        socket.on("rideManager", async (data: string) => {
+            const dataParsed: rideProps = JSON.parse(data);
             const ridersID = await FacdriveAPI.getRouteRiders(dataParsed.driverID, dataParsed.routeID);
 
             ridersID.forEach(targetID => {
@@ -37,6 +38,19 @@ export class NotificationSocket {
                     console.log(`Usuário ${targetID} não está conectado`);
                 }
             })
+        });
+    }
+
+    private chooseRoute(socket: Socket) {
+        socket.on("chooseRoute", async (data: string) => {
+            const dataParsed: chooseRouteProps = JSON.parse(data);
+            const targetSocketId = this.userConnections[dataParsed.driverID.toString()];
+            if (targetSocketId) {
+                this.io.to(targetSocketId).emit("messageFromServer", JSON.stringify(dataParsed.message));
+                console.log(`Mensagem enviada para o usuário ${dataParsed.driverID}: ${dataParsed.message}`);
+            } else {
+                console.log(`Usuário ${dataParsed.driverID} não está conectado`);
+            }
         });
     }
 
